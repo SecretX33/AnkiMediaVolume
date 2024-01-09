@@ -14,6 +14,7 @@ import com.github.secretx33.ankimediavolume.serializer.OffsetDateTimeDeserialize
 import com.github.secretx33.ankimediavolume.serializer.OffsetDateTimeSerializer
 import com.github.secretx33.ankimediavolume.serializer.PathDeserializer
 import com.github.secretx33.ankimediavolume.serializer.PathSerializer
+import org.fusesource.jansi.Ansi
 import java.awt.Desktop
 import java.nio.file.Path
 import java.nio.file.attribute.BasicFileAttributeView
@@ -85,3 +86,5 @@ fun Path.setModifiedTimes(
     lastAccessedAt?.let(FileTime::from),
     createdAt?.let(FileTime::from),
 )
+
+fun cleanScreen() = print(Ansi.ansi().cursorUp(Integer.MAX_VALUE).eraseScreen())

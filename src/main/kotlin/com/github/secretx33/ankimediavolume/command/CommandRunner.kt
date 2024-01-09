@@ -1,6 +1,7 @@
 package com.github.secretx33.ankimediavolume.command
 
 import com.github.secretx33.ankimediavolume.model.Configuration
+import com.github.secretx33.ankimediavolume.util.cleanScreen
 import com.github.secretx33.ankimediavolume.util.readInt
 import com.github.secretx33.ankimediavolume.util.shiftBy
 import com.github.secretx33.ankimediavolume.util.shiftEndBy
@@ -36,6 +37,7 @@ private suspend fun CommandContext.runCommand(
 ): Action {
     when (command) {
         is ExecutionCommand -> {
+            cleanScreen()
             command.apply { execute() }
             return Action.Return
         }
@@ -64,6 +66,8 @@ private fun presentOptions(
         "${index + 1}. ${item.name}"
     }.plus("$returnOptionIndex. ${if (currentLevel == 0) "Exit" else "Return"}")
         .joinToString("\n", prefix = "${command.name}:\n\n")
+
+    cleanScreen()
     log.info(optionText)
 
     val options = scanner.readInt(subCommands.indices.shiftBy(1).shiftEndBy(1))

@@ -66,7 +66,7 @@ class RenameMediaFilesCommand : ExecutionCommand {
         val now = OffsetDateTime.now(ZoneOffset.UTC)
         val renameSession = createRenameSession(now, renamedFiles)
 
-        log.info("""
+        log.info("\n"+ """
             Rename session info:
                Anki media folder: ${renameSession.ankiMediaFolderPath.absolutePathString()}
                Date: ${renameSession.date.format(DateTimeFormatter.ISO_DATE_TIME)}
