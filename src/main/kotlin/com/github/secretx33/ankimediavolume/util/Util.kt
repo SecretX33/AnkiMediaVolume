@@ -47,3 +47,7 @@ fun Path.moveToTrash() {
         }
     }
 }
+
+infix fun IntRange.shiftBy(number: Int): IntRange = IntRange(start + number, last + number)
+
+infix fun IntRange.shiftEndBy(number: Int): IntRange = IntRange(start, last + number)

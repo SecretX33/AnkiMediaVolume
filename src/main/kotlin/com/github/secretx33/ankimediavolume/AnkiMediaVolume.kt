@@ -3,12 +3,14 @@
 
 package com.github.secretx33.ankimediavolume
 
-import org.slf4j.LoggerFactory
-import java.lang.invoke.MethodHandles
+import com.github.secretx33.ankimediavolume.command.runCommands
+import com.github.secretx33.ankimediavolume.model.readConfiguration
+import com.github.secretx33.ankimediavolume.util.openDIScope
 import kotlin.io.path.ExperimentalPathApi
 import kotlin.time.ExperimentalTime
 
-private val log = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass())
-
-fun main() {
+suspend fun main() {
+    val configuration = readConfiguration() ?: return
+    val scope = openDIScope(configuration)
+    runCommands(scope)
 }

@@ -6,13 +6,16 @@ import com.github.secretx33.ankimediavolume.model.RenamedFile
 import com.github.secretx33.ankimediavolume.util.moveToTrash
 import com.github.secretx33.ankimediavolume.util.objectMapper
 import com.github.secretx33.ankimediavolume.util.readInt
+import com.github.secretx33.ankimediavolume.util.shiftBy
 import org.slf4j.LoggerFactory
 import toothpick.InjectConstructor
 import java.nio.file.Path
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import java.time.format.DateTimeParseException
+import javax.inject.Singleton
 import kotlin.io.path.absolutePathString
+import kotlin.io.path.deleteIfExists
 import kotlin.io.path.div
 import kotlin.io.path.exists
 import kotlin.io.path.isRegularFile
@@ -22,8 +25,11 @@ import kotlin.io.path.name
 import kotlin.io.path.notExists
 import kotlin.io.path.readText
 
+@Singleton
 @InjectConstructor
 class ListSessionsForUndoCommand : ExecutionCommand {
+
+    override val name: String = "Undo rename sessions"
 
     private val log = LoggerFactory.getLogger(this::class.java)
 
@@ -44,7 +50,7 @@ class ListSessionsForUndoCommand : ExecutionCommand {
             }}
         """.trimIndent())
 
-        val selectedSession = sessions[scanner.readInt(sessions.indices)]
+        val selectedSession = sessions[scanner.readInt(sessions.indices.shiftBy(1))]
         val renameSession = try {
             objectMapper.readValue<RenameSession>(selectedSession.readText())
         } catch (e: Exception) {
@@ -70,13 +76,14 @@ class ListSessionsForUndoCommand : ExecutionCommand {
 
         if (results.any { it.value != RenameResult.SUCCESSFULLY_RENAMED }) {
             val successCount = results.count { it.value == RenameResult.SUCCESSFULLY_RENAMED }
-            log.info("\nRename session '${selectedSession.name}' was partially undone, $successCount out of ${renamedFiles.size} files were successfully unrenamed, session file '${selectedSession.name}' was NOT deleted.\nPlease double-check the error messages above and take the appropriate action.")
+            log.info("\nRename session '${selectedSession.name}' was partially undone, $successCount out of ${renamedFiles.size} files were successfully unrenamed, session file '${selectedSession.name}' and lock file were NOT deleted.\nPlease double-check the error messages above and take the appropriate action.")
             scanner.nextLine()
             return
         }
 
         selectedSession.moveToTrash()
-        log.info("\nRename session '${selectedSession.name}' undone successfully, all files were unrenamed, session file '${selectedSession.name}' was deleted.")
+        configuration.ankiMediaLockFile.deleteIfExists()
+        log.info("\nRename session '${selectedSession.name}' undone successfully, all files were unrenamed, session file '${selectedSession.name}' and lock file were deleted.")
         scanner.nextLine()
     }
 
@@ -128,7 +135,8 @@ class ListSessionsForUndoCommand : ExecutionCommand {
     }.sortedBy { it.first }
         .map { it.second }
 
-    private companion object {
+    companion object {
+        const val RENAME_SESSION_NAME_TEMPLATE = "rename_session_{date}.json"
         val RENAME_SESSION_NAME_REGEX by lazy { "^rename_session_(.*)\\.json$".toRegex() }
         val RENAME_SESSION_DATE_FORMAT: DateTimeFormatter by lazy { DateTimeFormatter.ofPattern("yyyy-MM-dd_HH-mm-ss") }
     }
