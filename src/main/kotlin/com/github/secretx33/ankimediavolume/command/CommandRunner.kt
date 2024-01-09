@@ -58,7 +58,7 @@ private fun presentOptions(
     scanner: Scanner,
     currentLevel: Int,
 ): Command? {
-    val returnOptionIndex = subCommands.size
+    val returnOptionIndex = subCommands.size + 1
 
     val optionText = subCommands.mapIndexed { index, item ->
         "${index + 1}. ${item.name}"

@@ -1,11 +1,13 @@
 package com.github.secretx33.ankimediavolume.command
 
 import com.fasterxml.jackson.module.kotlin.readValue
+import com.github.secretx33.ankimediavolume.model.FileAttributesInfo
 import com.github.secretx33.ankimediavolume.model.RenameSession
 import com.github.secretx33.ankimediavolume.model.RenamedFile
 import com.github.secretx33.ankimediavolume.util.moveToTrash
 import com.github.secretx33.ankimediavolume.util.objectMapper
 import com.github.secretx33.ankimediavolume.util.readInt
+import com.github.secretx33.ankimediavolume.util.setModifiedTimes
 import com.github.secretx33.ankimediavolume.util.shiftBy
 import org.slf4j.LoggerFactory
 import toothpick.InjectConstructor
@@ -34,8 +36,9 @@ class ListSessionsForUndoCommand : ExecutionCommand {
     private val log = LoggerFactory.getLogger(this::class.java)
 
     override suspend fun CommandContext.execute() {
-        val rollbackFolder = configuration.rollbackFolderPath
-        val sessions = rollbackFolder.listDirectoryEntries("*.json").filter { it.isRegularFile() }
+        val undoFolder = configuration.undoSessionsFolderPath
+        val sessions = undoFolder.takeIf { it.exists() }?.listDirectoryEntries("*.json")
+            ?.filter { it.isRegularFile() }.orEmpty()
             .ifEmpty {
                 log.info("No rename sessions found to undo.")
                 scanner.nextLine()
@@ -50,7 +53,7 @@ class ListSessionsForUndoCommand : ExecutionCommand {
             }}
         """.trimIndent())
 
-        val selectedSession = sessions[scanner.readInt(sessions.indices.shiftBy(1))]
+        val selectedSession = sessions[scanner.readInt(sessions.indices.shiftBy(1)) - 1]
         val renameSession = try {
             objectMapper.readValue<RenameSession>(selectedSession.readText())
         } catch (e: Exception) {
@@ -60,10 +63,10 @@ class ListSessionsForUndoCommand : ExecutionCommand {
         }
 
         log.info("""
-            Rename session info
-              - Date: ${renameSession.date.format(DateTimeFormatter.ISO_DATE_TIME)}
-              - Anki media folder: ${renameSession.ankiMediaFolderPath.absolutePathString()}
-              - File: ${selectedSession.absolutePathString()}
+            Rename session info:
+               File: ${selectedSession.absolutePathString()}
+               Anki media folder: ${renameSession.ankiMediaFolderPath.absolutePathString()}
+               Date: ${renameSession.date.format(DateTimeFormatter.ISO_DATE_TIME)}
         """.trimIndent() + "\n")
 
         val renamedFiles = renameSession.files
@@ -99,9 +102,15 @@ class ListSessionsForUndoCommand : ExecutionCommand {
             originalFile.exists() -> RenameResult.ORIGINAL_FILE_ALREADY_EXISTS
             else -> RenameResult.SUCCESSFULLY_RENAMED.also {
                 renamedFile.moveTo(originalFile)
+                originalFile.restoreTimes(file.fileAttributesInfo)
             }
         }
     }
+
+    private fun Path.restoreTimes(fileAttribute: FileAttributesInfo) = setModifiedTimes(
+        lastModifiedAt = fileAttribute.lastModifiedAt,
+        createdAt = fileAttribute.createdAt,
+    )
 
     private fun logRenameStatus(
         index: Int,
@@ -137,7 +146,7 @@ class ListSessionsForUndoCommand : ExecutionCommand {
 
     companion object {
         const val RENAME_SESSION_NAME_TEMPLATE = "rename_session_{date}.json"
-        val RENAME_SESSION_NAME_REGEX by lazy { "^rename_session_(.*)\\.json$".toRegex() }
+        val RENAME_SESSION_NAME_REGEX = "^rename_session_(.*)\\.json$".toRegex()
         val RENAME_SESSION_DATE_FORMAT: DateTimeFormatter by lazy { DateTimeFormatter.ofPattern("yyyy-MM-dd_HH-mm-ss") }
     }
 }

@@ -29,7 +29,7 @@ val CONFIG_PATH = Path("config.json").absolute()
 
 data class Configuration(
     val ankiMediaFolderPath: Path = getAnkiMediaPath(),
-    val rollbackFolderPath: Path = Path(""),
+    val undoSessionsFolderPath: Path = Path("undo_sessions"),
 ) {
     @JsonIgnore
     val ankiMediaLockFile = ankiMediaFolderPath / LOCK_FILE_NAME

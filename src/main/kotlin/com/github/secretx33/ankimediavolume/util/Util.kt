@@ -5,18 +5,32 @@ import com.fasterxml.jackson.databind.DeserializationFeature
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.ObjectWriter
 import com.fasterxml.jackson.databind.module.SimpleModule
+import com.fasterxml.jackson.module.kotlin.KotlinModule
 import com.fasterxml.jackson.module.kotlin.addDeserializer
 import com.fasterxml.jackson.module.kotlin.addSerializer
+import com.github.secretx33.ankimediavolume.serializer.InstantDeserializer
+import com.github.secretx33.ankimediavolume.serializer.InstantSerializer
+import com.github.secretx33.ankimediavolume.serializer.OffsetDateTimeDeserializer
+import com.github.secretx33.ankimediavolume.serializer.OffsetDateTimeSerializer
 import com.github.secretx33.ankimediavolume.serializer.PathDeserializer
 import com.github.secretx33.ankimediavolume.serializer.PathSerializer
 import java.awt.Desktop
 import java.nio.file.Path
+import java.nio.file.attribute.BasicFileAttributeView
+import java.nio.file.attribute.FileTime
+import java.time.Instant
+import java.time.OffsetDateTime
 import kotlin.io.path.createDirectories
 import kotlin.io.path.createFile
 import kotlin.io.path.deleteIfExists
 import kotlin.io.path.exists
+import kotlin.io.path.fileAttributesView
 
-val objectMapper: ObjectMapper by lazy { ObjectMapper().findAndRegisterModules().applyProjectDefaults() }
+val objectMapper: ObjectMapper by lazy {
+    ObjectMapper().findAndRegisterModules()
+        .registerModules(KotlinModule.Builder().build())
+        .applyProjectDefaults()
+}
 
 val prettyObjectMapper: ObjectWriter by lazy { objectMapper.writerWithDefaultPrettyPrinter() }
 
@@ -24,6 +38,10 @@ private fun ObjectMapper.applyProjectDefaults(): ObjectMapper = apply {
     registerModule(SimpleModule().apply {
         addSerializer(Path::class, PathSerializer())
         addDeserializer(Path::class, PathDeserializer())
+        addSerializer(OffsetDateTime::class, OffsetDateTimeSerializer())
+        addDeserializer(OffsetDateTime::class, OffsetDateTimeDeserializer())
+        addSerializer(Instant::class, InstantSerializer())
+        addDeserializer(Instant::class, InstantDeserializer())
         addAbstractTypeMapping(Set::class.java, LinkedHashSet::class.java)
     })
     setSerializationInclusion(JsonInclude.Include.NON_NULL)
@@ -57,3 +75,13 @@ fun Path.moveToTrash() {
 infix fun IntRange.shiftBy(number: Int): IntRange = IntRange(start + number, last + number)
 
 infix fun IntRange.shiftEndBy(number: Int): IntRange = IntRange(start, last + number)
+
+fun Path.setModifiedTimes(
+    createdAt: Instant? = null,
+    lastModifiedAt: Instant? = null,
+    lastAccessedAt: Instant? = null,
+) = fileAttributesView<BasicFileAttributeView>().setTimes(
+    lastModifiedAt?.let(FileTime::from),
+    lastAccessedAt?.let(FileTime::from),
+    createdAt?.let(FileTime::from),
+)

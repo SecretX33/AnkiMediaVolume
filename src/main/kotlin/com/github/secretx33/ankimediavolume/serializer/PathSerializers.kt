@@ -11,9 +11,11 @@ import kotlin.io.path.Path
 import kotlin.io.path.absolutePathString
 
 class PathSerializer : JsonSerializer<Path>() {
-    override fun serialize(path: Path, generator: JsonGenerator, provider: SerializerProvider) = generator.writeString(path.absolutePathString())
+    override fun serialize(value: Path, generator: JsonGenerator, provider: SerializerProvider) =
+        generator.writeString(value.absolutePathString())
 }
 
 class PathDeserializer : JsonDeserializer<Path>() {
-    override fun deserialize(parser: JsonParser, context: DeserializationContext): Path = Path(parser.valueAsString)
+    override fun deserialize(parser: JsonParser, context: DeserializationContext): Path =
+        Path(parser.valueAsString)
 }
