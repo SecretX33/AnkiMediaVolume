@@ -3,6 +3,7 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 plugins {
     id("com.github.johnrengelman.shadow") version "8.1.1"
     kotlin("jvm") version "1.9.22"
+    kotlin("kapt") version "1.9.22"
     application
 }
 
@@ -24,6 +25,9 @@ dependencies {
     implementation("com.fasterxml.jackson.datatype:jackson-datatype-jdk8")
     implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310")
     implementation("com.fasterxml.jackson.module:jackson-module-kotlin")
+    val toothpick_version = "3.1.0"
+    implementation("com.github.stephanenicolas.toothpick:ktp:$toothpick_version")
+    kapt("com.github.stephanenicolas.toothpick:toothpick-compiler:$toothpick_version")
 }
 
 tasks.test {
