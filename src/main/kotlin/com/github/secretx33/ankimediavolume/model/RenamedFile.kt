@@ -8,10 +8,15 @@ data class RenameSession(
     val date: OffsetDateTime,
     val ankiMediaFolderPath: Path,
     val files: Set<RenamedFile>,
-)
+) {
+    init {
+        require(files.isNotEmpty()) { "Files cannot be empty" }
+    }
+}
 
 data class RenamedFile(
-    val path: Path,
+    val originalName: String,
+    val renamedName: String,
     val fileAttributesInfo: FileAttributesInfo,
 )
 

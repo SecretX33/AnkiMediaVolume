@@ -1,8 +1,12 @@
 package com.github.secretx33.ankimediavolume.command
 
-interface Command {
-    val subCommands: Set<Command> get() = emptySet()
+sealed interface Command
 
-    fun execute() {
+interface CommandGroup : Command {
+    val subCommands: Set<Command>
+}
+
+interface ExecutionCommand : Command {
+    suspend fun CommandContext.execute() {
     }
 }
