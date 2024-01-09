@@ -77,13 +77,11 @@ class RenameMediaFilesCommand : ExecutionCommand {
 
         log.info("Found ${renamedFiles.size} files to rename. Starting rename process...\n")
 
-        val nowInstant = now.toInstant()
         renamedFiles.forEachIndexed { index, file ->
             val originalFile = configuration.ankiMediaFolderPath / file.originalName
             val renamedFile = configuration.ankiMediaFolderPath / file.renamedName
             try {
                 originalFile.moveTo(renamedFile)
-                renamedFile.setModifiedTimes(lastModifiedAt = nowInstant)
             } catch (e: Exception) {
                 log.error("Error while renaming file '${originalFile.absolutePathString()}' to '${renamedFile.absolutePathString()}'", e)
                 scanner.nextLine()
