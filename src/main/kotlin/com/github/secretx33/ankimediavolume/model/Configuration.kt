@@ -58,7 +58,7 @@ private fun getAnkiBasePath(): Path {
 
 fun readConfiguration(): Configuration? {
     if (CONFIG_PATH.notExists()) {
-        log.info("Configuration file not found, creating default one. Please check the generated configuration values, then re-run the program.")
+        log.info("Configuration file not found, creating default one.\n\nPlease check the generated configuration values, then re-run the program.")
         CONFIG_PATH.createFileIfNotExists().writeText(prettyObjectMapper.writeValueAsString(Configuration()))
         readlnOrNull()
         return null

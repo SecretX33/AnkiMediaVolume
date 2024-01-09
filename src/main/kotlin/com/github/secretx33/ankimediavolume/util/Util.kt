@@ -5,6 +5,10 @@ import com.fasterxml.jackson.databind.DeserializationFeature
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.ObjectWriter
 import com.fasterxml.jackson.databind.module.SimpleModule
+import com.fasterxml.jackson.module.kotlin.addDeserializer
+import com.fasterxml.jackson.module.kotlin.addSerializer
+import com.github.secretx33.ankimediavolume.serializer.PathDeserializer
+import com.github.secretx33.ankimediavolume.serializer.PathSerializer
 import java.awt.Desktop
 import java.nio.file.Path
 import kotlin.io.path.createDirectories
@@ -18,6 +22,8 @@ val prettyObjectMapper: ObjectWriter by lazy { objectMapper.writerWithDefaultPre
 
 private fun ObjectMapper.applyProjectDefaults(): ObjectMapper = apply {
     registerModule(SimpleModule().apply {
+        addSerializer(Path::class, PathSerializer())
+        addDeserializer(Path::class, PathDeserializer())
         addAbstractTypeMapping(Set::class.java, LinkedHashSet::class.java)
     })
     setSerializationInclusion(JsonInclude.Include.NON_NULL)
