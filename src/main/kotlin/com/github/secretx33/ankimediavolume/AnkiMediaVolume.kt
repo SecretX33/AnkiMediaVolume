@@ -6,7 +6,7 @@ import com.github.secretx33.ankimediavolume.util.openDIScope
 import org.fusesource.jansi.AnsiConsole
 import kotlin.system.exitProcess
 
-suspend fun main() {
+fun main() {
     try {
         AnsiConsole.systemInstall()
         val configuration = readConfiguration() ?: return

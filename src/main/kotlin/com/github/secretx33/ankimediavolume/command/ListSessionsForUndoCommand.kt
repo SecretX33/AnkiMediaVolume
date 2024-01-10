@@ -34,7 +34,7 @@ class ListSessionsForUndoCommand : ExecutionCommand {
 
     private val log = LoggerFactory.getLogger(this::class.java)
 
-    override suspend fun CommandContext.execute() {
+    override fun CommandContext.execute() {
         val undoFolder = configuration.undoSessionsFolderPath
         val sessions = undoFolder.takeIf { it.exists() }?.listDirectoryEntries("*.json")
             ?.filter { it.isRegularFile() }.orEmpty()

@@ -9,5 +9,5 @@ interface CommandGroup : Command {
 }
 
 interface ExecutionCommand : Command {
-    suspend fun CommandContext.execute()
+    fun CommandContext.execute()
 }

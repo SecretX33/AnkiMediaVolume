@@ -25,7 +25,7 @@ import kotlin.io.path.writeText
 
 private val log = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass())
 
-val CONFIG_PATH = Path("config.json").absolute()
+private val CONFIG_PATH = Path("config.json").absolute()
 
 data class Configuration(
     val ankiMediaFolderPath: Path = getAnkiMediaPath(),

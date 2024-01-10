@@ -18,8 +18,6 @@ repositories {
 
 dependencies {
     implementation(kotlin("stdlib-jdk8"))
-    implementation(platform("org.jetbrains.kotlinx:kotlinx-coroutines-bom:1.7.3"))
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core")
     implementation("io.github.secretx33:path-matching-resource-pattern-resolver:0.1")
     implementation("ch.qos.logback:logback-classic:1.4.12")
     implementation(platform("com.fasterxml.jackson:jackson-bom:2.15.2"))

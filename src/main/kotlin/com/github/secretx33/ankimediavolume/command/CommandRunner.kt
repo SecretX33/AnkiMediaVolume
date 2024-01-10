@@ -13,7 +13,7 @@ import java.util.Scanner
 
 private val log = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass())
 
-suspend fun runCommands(scope: Scope) {
+fun runCommands(scope: Scope) {
     val context = CommandContext(configuration = scope.getInstance<Configuration>())
     val stack = ArrayDeque<Command>().apply { addFirst(scope.getInstance<RootCommand>()) }
 
@@ -30,7 +30,7 @@ suspend fun runCommands(scope: Scope) {
     }
 }
 
-private suspend fun CommandContext.runCommand(
+private fun CommandContext.runCommand(
     command: Command,
     context: CommandContext,
     currentLevel: Int,

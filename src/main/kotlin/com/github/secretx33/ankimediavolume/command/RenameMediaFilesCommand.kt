@@ -38,7 +38,7 @@ class RenameMediaFilesCommand : ExecutionCommand {
 
     private val log = LoggerFactory.getLogger(this::class.java)
 
-    override suspend fun CommandContext.execute() {
+    override fun CommandContext.execute() {
         if (configuration.ankiMediaLockFile.exists()) {
             log.info("Anki media folder is already renamed, please undo the previous rename session before continuing.\n\nIf you believe this is an error, please manually delete the lock file at '${configuration.ankiMediaLockFile}', then try again.")
             scanner.nextLine()
