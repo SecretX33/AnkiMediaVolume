@@ -1,13 +1,12 @@
 package com.github.secretx33.ankimediavolume.command
 
 import com.fasterxml.jackson.module.kotlin.readValue
-import com.github.secretx33.ankimediavolume.model.FileAttributesInfo
 import com.github.secretx33.ankimediavolume.model.RenameSession
 import com.github.secretx33.ankimediavolume.model.RenamedFile
+import com.github.secretx33.ankimediavolume.model.setTimes
 import com.github.secretx33.ankimediavolume.util.moveToTrash
 import com.github.secretx33.ankimediavolume.util.objectMapper
 import com.github.secretx33.ankimediavolume.util.readInt
-import com.github.secretx33.ankimediavolume.util.setModifiedTimes
 import com.github.secretx33.ankimediavolume.util.shiftBy
 import org.slf4j.LoggerFactory
 import toothpick.InjectConstructor
@@ -102,15 +101,10 @@ class ListSessionsForUndoCommand : ExecutionCommand {
             originalFile.exists() -> RenameResult.ORIGINAL_FILE_ALREADY_EXISTS
             else -> RenameResult.SUCCESSFULLY_RENAMED.also {
                 renamedFile.moveTo(originalFile)
-                originalFile.restoreTimes(file.fileAttributesInfo)
+                originalFile.setTimes(file.fileAttributesInfo)
             }
         }
     }
-
-    private fun Path.restoreTimes(fileAttribute: FileAttributesInfo) = setModifiedTimes(
-        lastModifiedAt = fileAttribute.lastModifiedAt,
-        createdAt = fileAttribute.createdAt,
-    )
 
     private fun logRenameStatus(
         index: Int,

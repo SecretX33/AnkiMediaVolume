@@ -77,7 +77,7 @@ infix fun IntRange.shiftBy(number: Int): IntRange = IntRange(start + number, las
 
 infix fun IntRange.shiftEndBy(number: Int): IntRange = IntRange(start, last + number)
 
-fun Path.setModifiedTimes(
+fun Path.setTimes(
     createdAt: Instant? = null,
     lastModifiedAt: Instant? = null,
     lastAccessedAt: Instant? = null,

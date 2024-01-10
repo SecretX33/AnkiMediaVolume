@@ -8,7 +8,6 @@ import com.github.secretx33.ankimediavolume.model.RenamedFile
 import com.github.secretx33.ankimediavolume.util.createFileIfNotExists
 import com.github.secretx33.ankimediavolume.util.prettyObjectMapper
 import com.github.secretx33.ankimediavolume.util.readOption
-import com.github.secretx33.ankimediavolume.util.setModifiedTimes
 import org.slf4j.LoggerFactory
 import toothpick.InjectConstructor
 import java.nio.file.Path

@@ -1,5 +1,6 @@
 package com.github.secretx33.ankimediavolume.model
 
+import com.github.secretx33.ankimediavolume.util.setTimes
 import java.nio.file.Path
 import java.time.Instant
 import java.time.OffsetDateTime
@@ -23,4 +24,9 @@ data class RenamedFile(
 data class FileAttributesInfo(
     val createdAt: Instant,
     val lastModifiedAt: Instant,
+)
+
+fun Path.setTimes(fileAttribute: FileAttributesInfo) = setTimes(
+    createdAt = fileAttribute.createdAt,
+    lastModifiedAt = fileAttribute.lastModifiedAt,
 )
