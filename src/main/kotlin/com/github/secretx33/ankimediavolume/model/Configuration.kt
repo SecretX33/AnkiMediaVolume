@@ -23,7 +23,7 @@ import kotlin.io.path.readAttributes
 import kotlin.io.path.readText
 import kotlin.io.path.writeText
 
-private val log = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass())
+private val log by lazy { LoggerFactory.getLogger(MethodHandles.lookup().lookupClass()) }
 
 private val CONFIG_PATH = Path("config.json").absolute()
 

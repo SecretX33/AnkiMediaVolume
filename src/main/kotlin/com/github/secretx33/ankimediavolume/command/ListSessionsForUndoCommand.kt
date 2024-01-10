@@ -1,6 +1,8 @@
 package com.github.secretx33.ankimediavolume.command
 
 import com.fasterxml.jackson.module.kotlin.readValue
+import com.github.secretx33.ankimediavolume.command.RenameMediaFilesCommand.Companion.RENAME_SESSION_DATE_FORMAT
+import com.github.secretx33.ankimediavolume.command.RenameMediaFilesCommand.Companion.RENAME_SESSION_NAME_REGEX
 import com.github.secretx33.ankimediavolume.model.RenameSession
 import com.github.secretx33.ankimediavolume.model.RenamedFile
 import com.github.secretx33.ankimediavolume.model.setTimes
@@ -44,7 +46,7 @@ class ListSessionsForUndoCommand : ExecutionCommand {
                 return
             }.sortRenameSessionPaths()
 
-        println("""
+        log.info("""
             Select a session to undo:
         
             ${sessions.withIndex().joinToString("\n") { (index, value) -> 
@@ -138,9 +140,4 @@ class ListSessionsForUndoCommand : ExecutionCommand {
     }.sortedBy { it.first }
         .map { it.second }
 
-    companion object {
-        const val RENAME_SESSION_NAME_TEMPLATE = "rename_session_{date}.json"
-        val RENAME_SESSION_NAME_REGEX = "^rename_session_(.*)\\.json$".toRegex()
-        val RENAME_SESSION_DATE_FORMAT: DateTimeFormatter by lazy { DateTimeFormatter.ofPattern("yyyy-MM-dd_HH-mm-ss") }
-    }
 }

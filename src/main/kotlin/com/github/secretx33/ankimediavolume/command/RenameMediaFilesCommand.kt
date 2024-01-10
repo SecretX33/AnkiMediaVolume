@@ -1,7 +1,5 @@
 package com.github.secretx33.ankimediavolume.command
 
-import com.github.secretx33.ankimediavolume.command.ListSessionsForUndoCommand.Companion.RENAME_SESSION_DATE_FORMAT
-import com.github.secretx33.ankimediavolume.command.ListSessionsForUndoCommand.Companion.RENAME_SESSION_NAME_TEMPLATE
 import com.github.secretx33.ankimediavolume.model.FileAttributesInfo
 import com.github.secretx33.ankimediavolume.model.RenameSession
 import com.github.secretx33.ankimediavolume.model.RenamedFile
@@ -65,7 +63,7 @@ class RenameMediaFilesCommand : ExecutionCommand {
         val now = OffsetDateTime.now(ZoneOffset.UTC)
         val renameSession = createRenameSession(now, renamedFiles)
 
-        log.info("\n"+ """
+        log.info("\n" + """
             Rename session info:
                Anki media folder: ${renameSession.ankiMediaFolderPath.absolutePathString()}
                Date: ${renameSession.date.format(DateTimeFormatter.ISO_DATE_TIME)}
@@ -143,8 +141,10 @@ class RenameMediaFilesCommand : ExecutionCommand {
     private fun getRenameSessionFileName(now: OffsetDateTime): String =
         RENAME_SESSION_NAME_TEMPLATE.replace("{date}", now.format(RENAME_SESSION_DATE_FORMAT))
 
-    private companion object {
-        val NOT_ASCII_REGEX = """[^\p{ASCII}]""".toRegex(RegexOption.IGNORE_CASE)
+    companion object {
+        const val RENAME_SESSION_NAME_TEMPLATE = "rename_session_{date}.json"
+        val RENAME_SESSION_NAME_REGEX by lazy { "^rename_session_(.*)\\.json$".toRegex() }
+        val RENAME_SESSION_DATE_FORMAT: DateTimeFormatter by lazy { DateTimeFormatter.ofPattern("yyyy-MM-dd_HH-mm-ss") }
+        private val NOT_ASCII_REGEX by lazy { """[^\p{ASCII}]""".toRegex(RegexOption.IGNORE_CASE) }
     }
-
 }
