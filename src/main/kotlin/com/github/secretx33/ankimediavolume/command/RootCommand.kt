@@ -13,6 +13,7 @@ class RootCommand(scope: Scope) : CommandGroup {
     override val subCommands: Set<Command> = setOf(
         RenameMediaFilesCommand::class,
         ListSessionsForUndoCommand::class,
+        OpenAnkiMediaFolderInFileExplorerCommand::class,
     ).mapTo(mutableSetOf()) { scope.getInstance(it.java) }
 
 }
