@@ -1,8 +1,8 @@
 package com.github.secretx33.ankimediavolume.command
 
 import com.fasterxml.jackson.module.kotlin.readValue
-import com.github.secretx33.ankimediavolume.command.RenameMediaFilesCommand.Companion.RENAME_SESSION_DATE_FORMAT
-import com.github.secretx33.ankimediavolume.command.RenameMediaFilesCommand.Companion.RENAME_SESSION_NAME_REGEX
+import com.github.secretx33.ankimediavolume.command.AbstractRenameMediaFilesCommand.Companion.RENAME_SESSION_DATE_FORMAT
+import com.github.secretx33.ankimediavolume.command.AbstractRenameMediaFilesCommand.Companion.RENAME_SESSION_NAME_REGEX
 import com.github.secretx33.ankimediavolume.model.RenameSession
 import com.github.secretx33.ankimediavolume.model.RenamedFile
 import com.github.secretx33.ankimediavolume.model.setTimes

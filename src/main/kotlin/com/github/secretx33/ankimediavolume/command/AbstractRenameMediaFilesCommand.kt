@@ -6,8 +6,8 @@ import com.github.secretx33.ankimediavolume.model.RenamedFile
 import com.github.secretx33.ankimediavolume.util.createFileIfNotExists
 import com.github.secretx33.ankimediavolume.util.prettyObjectMapper
 import com.github.secretx33.ankimediavolume.util.readOption
+import org.slf4j.Logger
 import org.slf4j.LoggerFactory
-import toothpick.InjectConstructor
 import java.nio.file.Path
 import java.nio.file.attribute.BasicFileAttributes
 import java.time.OffsetDateTime
@@ -15,28 +15,24 @@ import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
 import java.util.Scanner
 import java.util.UUID
-import javax.inject.Singleton
 import kotlin.io.path.absolute
 import kotlin.io.path.absolutePathString
 import kotlin.io.path.div
 import kotlin.io.path.exists
 import kotlin.io.path.extension
-import kotlin.io.path.listDirectoryEntries
 import kotlin.io.path.moveTo
 import kotlin.io.path.name
 import kotlin.io.path.notExists
 import kotlin.io.path.readAttributes
 import kotlin.io.path.writeText
 
-@Singleton
-@InjectConstructor
-class RenameMediaFilesCommand : ExecutionCommand {
+abstract class AbstractRenameMediaFilesCommand : ExecutionCommand {
 
-    override val name: String = "Rename media files"
+    protected val log: Logger = LoggerFactory.getLogger(this::class.java)
 
-    private val log = LoggerFactory.getLogger(this::class.java)
+    protected abstract fun CommandContext.getMediaFiles(): Collection<Path>
 
-    override fun CommandContext.execute() {
+    final override fun CommandContext.execute() {
         if (configuration.ankiMediaLockFile.exists()) {
             log.info("Anki media folder is already renamed, please undo the previous rename session before continuing.\n\nIf you believe this is an error, please manually delete the lock file at '${configuration.ankiMediaLockFile}', then try again.")
             scanner.nextLine()
@@ -51,13 +47,11 @@ class RenameMediaFilesCommand : ExecutionCommand {
 
         if (!scanner.askForRenameConfirmation()) return
 
-        val mediaFiles = configuration.ankiMediaFolderPath.listDirectoryEntries("*.mp3")
-            .filter { NOT_ASCII_REGEX in it.name }
-            .ifEmpty {
-                log.info("No media files found to rename.")
-                scanner.nextLine()
-                return
-            }
+        val mediaFiles = getMediaFiles().ifEmpty {
+            log.info("No media files found to rename.")
+            scanner.nextLine()
+            return
+        }
         val renamedFiles = mediaFiles.mapTo(mutableSetOf()) { it.toRenamedFile() }
 
         val now = OffsetDateTime.now(ZoneOffset.UTC)
@@ -145,6 +139,6 @@ class RenameMediaFilesCommand : ExecutionCommand {
         const val RENAME_SESSION_NAME_TEMPLATE = "rename_session_{date}.json"
         val RENAME_SESSION_NAME_REGEX by lazy { "^rename_session_(.*)\\.json$".toRegex() }
         val RENAME_SESSION_DATE_FORMAT: DateTimeFormatter by lazy { DateTimeFormatter.ofPattern("yyyy-MM-dd_HH-mm-ss") }
-        private val NOT_ASCII_REGEX by lazy { """[^\p{ASCII}]""".toRegex(RegexOption.IGNORE_CASE) }
+        val NOT_ASCII_REGEX by lazy { """[^\p{ASCII}]""".toRegex(RegexOption.IGNORE_CASE) }
     }
 }

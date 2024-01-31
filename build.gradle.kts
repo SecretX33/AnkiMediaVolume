@@ -29,6 +29,7 @@ dependencies {
     implementation("com.github.stephanenicolas.toothpick:ktp:$toothpick_version")
     kapt("com.github.stephanenicolas.toothpick:toothpick-compiler:$toothpick_version")
     implementation("org.fusesource.jansi:jansi:2.4.1")
+    implementation("com.mpatric:mp3agic:0.9.1")
 }
 
 tasks.test {
