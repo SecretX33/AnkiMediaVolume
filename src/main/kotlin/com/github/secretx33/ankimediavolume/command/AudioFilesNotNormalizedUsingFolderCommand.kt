@@ -5,32 +5,41 @@ import com.github.secretx33.ankimediavolume.model.RenameSession
 import com.github.secretx33.ankimediavolume.model.RenamedFile
 import com.github.secretx33.ankimediavolume.util.createFileIfNotExists
 import com.github.secretx33.ankimediavolume.util.prettyObjectMapper
-import com.github.secretx33.ankimediavolume.util.readOption
-import org.slf4j.Logger
-import org.slf4j.LoggerFactory
+import toothpick.InjectConstructor
+import java.awt.Desktop
 import java.nio.file.Path
 import java.nio.file.attribute.BasicFileAttributes
 import java.time.OffsetDateTime
 import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
-import java.util.Scanner
 import java.util.UUID
+import javax.inject.Singleton
+import kotlin.io.path.ExperimentalPathApi
 import kotlin.io.path.absolute
 import kotlin.io.path.absolutePathString
+import kotlin.io.path.copyTo
+import kotlin.io.path.createDirectories
+import kotlin.io.path.deleteRecursively
 import kotlin.io.path.div
 import kotlin.io.path.exists
 import kotlin.io.path.extension
+import kotlin.io.path.listDirectoryEntries
 import kotlin.io.path.moveTo
 import kotlin.io.path.name
 import kotlin.io.path.notExists
 import kotlin.io.path.readAttributes
 import kotlin.io.path.writeText
 
-abstract class AbstractRenameMediaFilesCommand : ExecutionCommand {
+@Singleton
+@InjectConstructor
+@OptIn(ExperimentalPathApi::class)
+class AudioFilesNotNormalizedUsingFolderCommand : AudioFilesNotNormalizedCommand() {
 
-    protected val log: Logger = LoggerFactory.getLogger(this::class.java)
+    override val name: String = "Normalize audio files using temporary folder"
 
-    protected abstract fun CommandContext.getMediaFiles(): Collection<Path>
+    override fun CommandContext.getMediaFiles(): Collection<Path> = configuration.ankiMediaFolderPath
+        .listDirectoryEntries("*.mp3")
+        .filter { !it.isVolumeNormalized() }
 
     override fun CommandContext.execute() {
         if (configuration.ankiMediaLockFile.exists()) {
@@ -45,59 +54,58 @@ abstract class AbstractRenameMediaFilesCommand : ExecutionCommand {
             return
         }
 
-        if (!scanner.askForRenameConfirmation()) return
-
         val mediaFiles = getMediaFiles().ifEmpty {
             log.info("No media files found to rename.")
             scanner.nextLine()
             return
         }
+        val temporaryAudioFolder = (configuration.temporaryAudiosFolderPath / UUID.randomUUID().toString()).createDirectories()
         val renamedFiles = mediaFiles.mapTo(mutableSetOf()) { it.toRenamedFile() }
-
-        val now = OffsetDateTime.now(ZoneOffset.UTC)
-        val renameSession = createRenameSession(now, renamedFiles)
 
         log.info("\n" + """
             Rename session info:
-               Anki media folder: ${renameSession.ankiMediaFolderPath.absolutePathString()}
-               Date: ${renameSession.date.format(DateTimeFormatter.ISO_DATE_TIME)}
+               Anki media folder: ${configuration.ankiMediaFolderPath.absolutePathString()}
+               Files: ${renamedFiles.size}
+               Date: ${OffsetDateTime.now(ZoneOffset.UTC).format(DateTimeFormatter.ISO_DATE_TIME)}
+               Temporary audio folder: ${temporaryAudioFolder.absolutePathString()}
         """.trimIndent() + "\n")
-
-        // Creates a lock file to indicate that the media folder is already renamed
-        configuration.ankiMediaLockFile.createFileIfNotExists()
-
-        log.info("Found ${renamedFiles.size} files to rename. Starting rename process...\n")
 
         renamedFiles.forEachIndexed { index, file ->
             val originalFile = configuration.ankiMediaFolderPath / file.originalName
-            val renamedFile = configuration.ankiMediaFolderPath / file.renamedName
+            val temporaryFile = temporaryAudioFolder / file.renamedName
             try {
-                originalFile.moveTo(renamedFile)
+                originalFile.copyTo(temporaryFile)
             } catch (e: Exception) {
-                log.error("Error while renaming file '${originalFile.absolutePathString()}' to '${renamedFile.absolutePathString()}'", e)
+                log.error("Error while copying file '${originalFile.absolutePathString()}' to '${temporaryFile.absolutePathString()}'", e)
                 scanner.nextLine()
                 return
             }
-            log.info("${index + 1}/${renamedFiles.size}. Renamed '${file.originalName}' -> '${file.renamedName}'")
+            log.info("${index + 1}/${renamedFiles.size}. Copied file '${file.renamedName}' -> '${file.originalName}'")
         }
 
-        log.info("\nAll ${renamedFiles.size} files renamed successfully, created new rename session '${getRenameSessionFileName(now)}' with the information to allow its undo.")
+        Desktop.getDesktop().open(temporaryAudioFolder.toFile())
+        log.info("\nOpened temporary audio folder in file explorer, please normalize the volume of the audio files there, close the file explorer, and only then press enter to continue.")
+        Thread.sleep(1500)
         scanner.nextLine()
-    }
 
-    /**
-     * Asks for confirmation of the user if he wants to proceed with the renaming operation or not.
-     *
-     * Returns `true` if user wants to continue, `false` otherwise.
-     */
-    private fun Scanner.askForRenameConfirmation(): Boolean {
-        log.info("""
-            This will rename all media files in the Anki media folder, and will also create a rollback session file in the program folder.
-            If you want to undo the rename later, you can run the program again and select the undo option.
-            Do you want to continue? (y/n)
-        """.trimIndent())
-        val selectedOption = readOption(options = setOf("y", "n"), forceLowercase = true)
-        return selectedOption == "y"
+        log.info("\nCopying all files from the temporary folder back to Anki media folder.\n")
+
+        renamedFiles.forEachIndexed { index, file ->
+            val originalFile = configuration.ankiMediaFolderPath / file.originalName
+            val temporaryFile = temporaryAudioFolder / file.renamedName
+            try {
+                temporaryFile.moveTo(originalFile, overwrite = true)
+            } catch (e: Exception) {
+                log.error("Error while moving file '${temporaryFile.absolutePathString()}' to '${originalFile.absolutePathString()}'", e)
+                scanner.nextLine()
+                return
+            }
+            log.info("${index + 1}/${renamedFiles.size}. Copied file '${file.renamedName}' -> '${file.originalName}'")
+        }
+        temporaryAudioFolder.deleteRecursively()
+
+        log.info("\nAll ${renamedFiles.size} files replaced successfully.")
+        scanner.nextLine()
     }
 
     private fun Path.generateNewRandomName(): String = absolute().run {

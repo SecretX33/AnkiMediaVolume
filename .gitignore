@@ -40,3 +40,4 @@ bin/
 
 /config.json
 /undo_sessions
+/audios_to_rename

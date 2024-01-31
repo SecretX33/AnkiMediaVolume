@@ -13,6 +13,7 @@ class RootCommand(scope: Scope) : CommandGroup {
     override val subCommands: Set<Command> = setOf(
         AudioFilesCommand::class,
         AudioFilesNotNormalizedCommand::class,
+        AudioFilesNotNormalizedUsingFolderCommand::class,
         ListSessionsForUndoCommand::class,
         OpenAnkiMediaFolderInFileExplorerCommand::class,
     ).mapTo(mutableSetOf()) { scope.getInstance(it.java) }

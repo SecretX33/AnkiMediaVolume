@@ -9,7 +9,7 @@ import kotlin.io.path.name
 
 @Singleton
 @InjectConstructor
-class AudioFilesNotNormalizedCommand : AbstractRenameMediaFilesCommand() {
+open class AudioFilesNotNormalizedCommand : AbstractRenameMediaFilesCommand() {
 
     override val name: String = "Rename audio files (not normalized only)"
 
@@ -19,7 +19,7 @@ class AudioFilesNotNormalizedCommand : AbstractRenameMediaFilesCommand() {
             NOT_ASCII_REGEX in it.name && !it.isVolumeNormalized()
         }
 
-    private fun Path.isVolumeNormalized(): Boolean {
+    protected fun Path.isVolumeNormalized(): Boolean {
         val mp3 = try {
             Mp3File(toFile())
         } catch (e: Exception) {
@@ -33,7 +33,7 @@ class AudioFilesNotNormalizedCommand : AbstractRenameMediaFilesCommand() {
         return hasReplayGainTag
     }
 
-    private companion object {
+    companion object {
         const val REPLAYGAIN_TRACK_GAIN = "REPLAYGAIN_TRACK_GAIN"
     }
 
