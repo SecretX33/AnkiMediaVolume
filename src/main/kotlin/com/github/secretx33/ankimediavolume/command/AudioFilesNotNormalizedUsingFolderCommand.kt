@@ -80,7 +80,7 @@ class AudioFilesNotNormalizedUsingFolderCommand : AudioFilesNotNormalizedCommand
                 scanner.nextLine()
                 return
             }
-            log.info("${index + 1}/${renamedFiles.size}. Copied file '${file.renamedName}' -> '${file.originalName}'")
+            log.info("${index + 1}/${renamedFiles.size}. Copied file '${file.originalName}' -> '${file.renamedName}'")
         }
 
         Desktop.getDesktop().open(temporaryAudioFolder.toFile())
