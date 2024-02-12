@@ -27,6 +27,12 @@ import kotlin.io.path.deleteIfExists
 import kotlin.io.path.exists
 import kotlin.io.path.fileAttributesView
 
+fun Any.getResourceAsByteArray(path: String): ByteArray = this::class.java.classLoader
+    .getResourceAsStream(path)
+    ?.buffered()
+    ?.use { it.readBytes() }
+    ?: throw IllegalArgumentException("Resource not found: $path")
+
 val objectMapper: ObjectMapper by lazy {
     ObjectMapper().findAndRegisterModules()
         .registerModules(KotlinModule.Builder().build())

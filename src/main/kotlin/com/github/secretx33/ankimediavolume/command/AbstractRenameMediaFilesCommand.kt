@@ -100,13 +100,13 @@ abstract class AbstractRenameMediaFilesCommand : ExecutionCommand {
         return selectedOption == "y"
     }
 
-    private fun Path.generateNewRandomName(): String = absolute().run {
+    protected fun Path.generateNewRandomName(): String = absolute().run {
         generateSequence { parent!! / "${UUID.randomUUID()}.${extension}" }
             .first { it.notExists() }
             .name
     }
 
-    private fun Path.toRenamedFile(): RenamedFile  {
+    protected fun Path.toRenamedFile(): RenamedFile  {
         val attributes = readAttributes<BasicFileAttributes>()
         return RenamedFile(
             originalName = name,

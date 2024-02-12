@@ -9,7 +9,7 @@ import toothpick.ktp.binding.module
 import java.lang.invoke.MethodHandles
 import toothpick.configuration.Configuration as ToothpickConfiguration
 
-private val IS_DEVELOPMENT = System.getenv("IS_DEVELOPMENT").toBoolean()
+val IS_DEVELOPMENT = System.getenv("IS_DEVELOPMENT").toBoolean()
 
 private fun getEnvConfiguration(): ToothpickConfiguration =
     when (IS_DEVELOPMENT) {

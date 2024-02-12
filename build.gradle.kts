@@ -30,6 +30,12 @@ dependencies {
     kapt("com.github.stephanenicolas.toothpick:toothpick-compiler:$toothpick_version")
     implementation("org.fusesource.jansi:jansi:2.4.1")
     implementation("com.mpatric:mp3agic:0.9.1")
+    implementation("com.zaxxer:HikariCP:5.1.0")
+    implementation("com.h2database:h2:2.2.224")
+    implementation(platform("org.jetbrains.exposed:exposed-bom:0.47.0"))
+    implementation("org.jetbrains.exposed:exposed-dao")
+    implementation("org.jetbrains.exposed:exposed-jdbc")
+    implementation("org.jetbrains.exposed:exposed-java-time")
 }
 
 tasks.test {

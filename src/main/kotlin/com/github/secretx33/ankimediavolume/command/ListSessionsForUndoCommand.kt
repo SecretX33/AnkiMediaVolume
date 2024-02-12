@@ -34,7 +34,7 @@ class ListSessionsForUndoCommand : ExecutionCommand {
 
     override val name: String = "Undo rename sessions"
 
-    private val log = LoggerFactory.getLogger(this::class.java)
+    private val log by lazy { LoggerFactory.getLogger(this::class.java) }
 
     override fun CommandContext.execute() {
         val undoFolder = configuration.undoSessionsFolderPath

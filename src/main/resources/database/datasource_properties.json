@@ -1,0 +1,16 @@
+{
+    "hikariProperties": {
+        "jdbcUrl": "jdbc:h2:<filePath>",
+        "maximumPoolSize": 2,
+        "transactionIsolation": "TRANSACTION_READ_UNCOMMITTED",
+        "driverClassName": "org.h2.Driver"
+    },
+    "properties": {
+        "rewriteBatchedStatements": true,
+        "cachePrepStmts": true,
+        "prepStmtCacheSize": 250,
+        "prepStmtCacheSqlLimit": 2048,
+        "characterEncoding": "utf8",
+        "useLegacyDatetimeCode": false
+    }
+}

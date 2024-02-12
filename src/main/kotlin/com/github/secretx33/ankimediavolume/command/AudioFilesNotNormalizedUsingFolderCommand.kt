@@ -1,45 +1,49 @@
 package com.github.secretx33.ankimediavolume.command
 
-import com.github.secretx33.ankimediavolume.model.FileAttributesInfo
-import com.github.secretx33.ankimediavolume.model.RenameSession
-import com.github.secretx33.ankimediavolume.model.RenamedFile
-import com.github.secretx33.ankimediavolume.util.createFileIfNotExists
-import com.github.secretx33.ankimediavolume.util.prettyObjectMapper
+import com.github.secretx33.ankimediavolume.model.NormalizedFile
+import com.github.secretx33.ankimediavolume.repository.NormalizedFileRepository
 import toothpick.InjectConstructor
 import java.awt.Desktop
 import java.nio.file.Path
-import java.nio.file.attribute.BasicFileAttributes
 import java.time.OffsetDateTime
 import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
 import java.util.UUID
 import javax.inject.Singleton
 import kotlin.io.path.ExperimentalPathApi
-import kotlin.io.path.absolute
 import kotlin.io.path.absolutePathString
 import kotlin.io.path.copyTo
 import kotlin.io.path.createDirectories
 import kotlin.io.path.deleteRecursively
 import kotlin.io.path.div
 import kotlin.io.path.exists
-import kotlin.io.path.extension
 import kotlin.io.path.listDirectoryEntries
 import kotlin.io.path.moveTo
 import kotlin.io.path.name
 import kotlin.io.path.notExists
-import kotlin.io.path.readAttributes
-import kotlin.io.path.writeText
 
 @Singleton
 @InjectConstructor
 @OptIn(ExperimentalPathApi::class)
-class AudioFilesNotNormalizedUsingFolderCommand : AudioFilesNotNormalizedCommand() {
+class AudioFilesNotNormalizedUsingFolderCommand(private val fileRepository: NormalizedFileRepository) : AudioFilesNotNormalizedCommand() {
 
-    override val name: String = "Normalize audio files using temporary folder"
+    override val name: String = "Normalize audio files using temporary folder (not normalized only)"
 
-    override fun CommandContext.getMediaFiles(): Collection<Path> = configuration.ankiMediaFolderPath
-        .listDirectoryEntries("*.mp3")
-        .filter { !it.isVolumeNormalized() }
+    override fun CommandContext.getMediaFiles(): Collection<Path> {
+        val allAudioFiles = configuration.ankiMediaFolderPath
+            .listDirectoryEntries("*.mp3")
+        val normalizedFileNames = fileRepository.getNormalizedFilesIn(configuration.ankiMediaFolderPath, allAudioFiles.mapTo(mutableSetOf()) { it.name })
+        val possibleNotNormalizedFiles = allAudioFiles.filterTo(mutableSetOf()) { it.name !in normalizedFileNames }
+
+        // Add the file that is normalized (but not yet in our normalized file database) to the database
+        val normalizedFiles = possibleNotNormalizedFiles.filterTo(mutableSetOf()) { it.isVolumeNormalized() }.takeIf { it.isNotEmpty() }
+            ?.also {
+                log.info("The following ${it.size} files are already volume normalized and will be ignored:\n\n${it.withIndex().joinToString("\n") { "${it.index}. ${it.value.name}" }}")
+                fileRepository.insertAll(it.map { NormalizedFile(configuration.ankiMediaFolderPath, it.name) })
+            }.orEmpty()
+
+        return possibleNotNormalizedFiles - normalizedFiles
+    }
 
     override fun CommandContext.execute() {
         if (configuration.ankiMediaLockFile.exists()) {
@@ -100,53 +104,14 @@ class AudioFilesNotNormalizedUsingFolderCommand : AudioFilesNotNormalizedCommand
                 scanner.nextLine()
                 return
             }
-            log.info("${index + 1}/${renamedFiles.size}. Copied file '${file.renamedName}' -> '${file.originalName}'")
+            log.info("${index + 1}/${renamedFiles.size}. Moved file '${file.renamedName}' -> '${file.originalName}'")
         }
         temporaryAudioFolder.deleteRecursively()
+
+        fileRepository.insertAll(renamedFiles.map { NormalizedFile(configuration.ankiMediaFolderPath, it.originalName) })
 
         log.info("\nAll ${renamedFiles.size} files replaced successfully.")
         scanner.nextLine()
     }
 
-    private fun Path.generateNewRandomName(): String = absolute().run {
-        generateSequence { parent!! / "${UUID.randomUUID()}.${extension}" }
-            .first { it.notExists() }
-            .name
-    }
-
-    private fun Path.toRenamedFile(): RenamedFile  {
-        val attributes = readAttributes<BasicFileAttributes>()
-        return RenamedFile(
-            originalName = name,
-            renamedName = generateNewRandomName(),
-            fileAttributesInfo = FileAttributesInfo(
-                createdAt = attributes.creationTime().toInstant(),
-                lastModifiedAt = attributes.lastModifiedTime().toInstant(),
-            )
-        )
-    }
-
-    private fun CommandContext.createRenameSession(
-        now: OffsetDateTime,
-        renamedFiles: Set<RenamedFile>,
-    ): RenameSession {
-        val session = RenameSession(
-            date = now,
-            ankiMediaFolderPath = configuration.ankiMediaFolderPath,
-            files = renamedFiles,
-        )
-        val sessionFile = configuration.undoSessionsFolderPath / getRenameSessionFileName(now)
-        sessionFile.createFileIfNotExists().writeText(prettyObjectMapper.writeValueAsString(session))
-        return session
-    }
-
-    private fun getRenameSessionFileName(now: OffsetDateTime): String =
-        RENAME_SESSION_NAME_TEMPLATE.replace("{date}", now.format(RENAME_SESSION_DATE_FORMAT))
-
-    companion object {
-        const val RENAME_SESSION_NAME_TEMPLATE = "rename_session_{date}.json"
-        val RENAME_SESSION_NAME_REGEX by lazy { "^rename_session_(.*)\\.json$".toRegex() }
-        val RENAME_SESSION_DATE_FORMAT: DateTimeFormatter by lazy { DateTimeFormatter.ofPattern("yyyy-MM-dd_HH-mm-ss") }
-        val NOT_ASCII_REGEX by lazy { """[^\p{ASCII}]""".toRegex(RegexOption.IGNORE_CASE) }
-    }
 }

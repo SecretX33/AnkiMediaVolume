@@ -12,7 +12,7 @@ class OpenAnkiMediaFolderInFileExplorerCommand : ExecutionCommand {
 
     override val name: String = "Open anki media folder in file explorer"
 
-    private val log = LoggerFactory.getLogger(this::class.java)
+    private val log by lazy { LoggerFactory.getLogger(this::class.java) }
 
     override fun CommandContext.execute() {
         if (configuration.ankiMediaFolderPath.notExists()) {
