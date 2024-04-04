@@ -1,6 +1,8 @@
 package com.github.secretx33.ankimediavolume.command
 
+import com.github.secretx33.ankimediavolume.model.Configuration
 import com.github.secretx33.ankimediavolume.model.NormalizedFile
+import com.github.secretx33.ankimediavolume.model.RenamedFile
 import com.github.secretx33.ankimediavolume.repository.NormalizedFileRepository
 import toothpick.InjectConstructor
 import java.awt.Desktop
@@ -95,7 +97,7 @@ class AudioFilesNotNormalizedUsingFolderCommand(private val fileRepository: Norm
         log.info("\nCopying all files from the temporary folder back to Anki media folder.\n")
 
         renamedFiles.forEachIndexed { index, file ->
-            val originalFile = configuration.ankiMediaFolderPath / file.originalName
+            val originalFile = buildOriginalFile(configuration, file)
             val temporaryFile = temporaryAudioFolder / file.renamedName
             try {
                 temporaryFile.moveTo(originalFile, overwrite = true)
@@ -108,10 +110,25 @@ class AudioFilesNotNormalizedUsingFolderCommand(private val fileRepository: Norm
         }
         temporaryAudioFolder.deleteRecursively()
 
-        fileRepository.insertAll(renamedFiles.map { NormalizedFile(configuration.ankiMediaFolderPath, it.originalName) })
+        val normalizedFiles = renamedFiles.filterTo(mutableSetOf()) {
+            val originalFile = buildOriginalFile(configuration, it)
+            originalFile.isVolumeNormalized()
+        }
+        fileRepository.insertAll(normalizedFiles.map { NormalizedFile(configuration.ankiMediaFolderPath, it.originalName) })
 
-        log.info("\nAll ${renamedFiles.size} files replaced successfully.")
+        val nonNormalizedFiles = renamedFiles - normalizedFiles
+        when {
+            nonNormalizedFiles.isNotEmpty() -> {
+                log.error("\n\nWhile replacing files, found out that ${nonNormalizedFiles.size} out of ${renamedFiles.size} were not normalized, did you forget to normalize these files?\n\n${nonNormalizedFiles.joinToString("\n") { "- ${it.originalName}" }}\n\nPress any button to continue.")
+                Thread.sleep(1000)
+            }
+            else -> log.info("\nAll ${renamedFiles.size} files replaced successfully.")
+        }
+
         scanner.nextLine()
     }
+
+    private fun buildOriginalFile(configuration: Configuration, renamedFile: RenamedFile): Path =
+        configuration.ankiMediaFolderPath / renamedFile.originalName
 
 }

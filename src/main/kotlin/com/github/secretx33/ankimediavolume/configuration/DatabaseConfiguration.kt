@@ -9,7 +9,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.runInterruptible
 import kotlinx.coroutines.withTimeoutOrNull
-import org.slf4j.LoggerFactory
 import toothpick.InjectConstructor
 import java.io.Closeable
 import javax.inject.Singleton
