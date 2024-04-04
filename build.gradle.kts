@@ -36,6 +36,7 @@ dependencies {
     implementation("org.jetbrains.exposed:exposed-dao")
     implementation("org.jetbrains.exposed:exposed-jdbc")
     implementation("org.jetbrains.exposed:exposed-java-time")
+    implementation("com.google.guava:guava:33.1.0-jre")
 }
 
 tasks.test {

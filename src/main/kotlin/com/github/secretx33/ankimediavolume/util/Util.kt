@@ -8,14 +8,17 @@ import com.fasterxml.jackson.databind.module.SimpleModule
 import com.fasterxml.jackson.module.kotlin.KotlinModule
 import com.fasterxml.jackson.module.kotlin.addDeserializer
 import com.fasterxml.jackson.module.kotlin.addSerializer
+import com.github.secretx33.ankimediavolume.model.Configuration
 import com.github.secretx33.ankimediavolume.serializer.InstantDeserializer
 import com.github.secretx33.ankimediavolume.serializer.InstantSerializer
 import com.github.secretx33.ankimediavolume.serializer.OffsetDateTimeDeserializer
 import com.github.secretx33.ankimediavolume.serializer.OffsetDateTimeSerializer
 import com.github.secretx33.ankimediavolume.serializer.PathDeserializer
 import com.github.secretx33.ankimediavolume.serializer.PathSerializer
+import com.google.common.reflect.ClassPath
 import org.fusesource.jansi.Ansi
 import java.awt.Desktop
+import java.lang.reflect.Modifier
 import java.nio.file.Path
 import java.nio.file.attribute.BasicFileAttributeView
 import java.nio.file.attribute.FileTime
@@ -26,6 +29,8 @@ import kotlin.io.path.createFile
 import kotlin.io.path.deleteIfExists
 import kotlin.io.path.exists
 import kotlin.io.path.fileAttributesView
+import kotlin.reflect.KClass
+import kotlin.reflect.full.isSubclassOf
 
 fun Any.getResourceAsByteArray(path: String): ByteArray = this::class.java.classLoader
     .getResourceAsStream(path)
@@ -94,3 +99,16 @@ fun Path.setTimes(
 )
 
 fun cleanScreen() = print(Ansi.ansi().cursorUp(Integer.MAX_VALUE).eraseScreen())
+
+val KClass<*>.isConcreteType: Boolean
+    get() = !Modifier.isAbstract(java.modifiers) && !Modifier.isInterface(java.modifiers)
+
+@Suppress("UNCHECKED_CAST")
+inline fun <T : Any> findClasses(pkg: String, filter: (KClass<*>) -> Boolean): Set<KClass<T>> =
+    ClassPath.from(Configuration::class.java.classLoader)
+        .getTopLevelClassesRecursive(pkg)
+        .map { it.load().kotlin }
+        .filterTo(mutableSetOf(), filter) as Set<KClass<T>>
+
+inline fun <reified T : Any> findRegistrableClasses(pkg: String): Set<KClass<T>> =
+    findClasses(pkg) { it.isConcreteType && it.isSubclassOf(T::class) }

@@ -1,37 +1,47 @@
 package com.github.secretx33.ankimediavolume.command
 
 import com.github.secretx33.ankimediavolume.model.Configuration
+import com.github.secretx33.ankimediavolume.model.FileAttributesInfo
 import com.github.secretx33.ankimediavolume.model.NormalizedFile
 import com.github.secretx33.ankimediavolume.model.RenamedFile
 import com.github.secretx33.ankimediavolume.repository.NormalizedFileRepository
+import com.mpatric.mp3agic.Mp3File
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 import toothpick.InjectConstructor
 import java.awt.Desktop
 import java.nio.file.Path
+import java.nio.file.attribute.BasicFileAttributes
 import java.time.OffsetDateTime
 import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
 import java.util.UUID
 import javax.inject.Singleton
 import kotlin.io.path.ExperimentalPathApi
+import kotlin.io.path.absolute
 import kotlin.io.path.absolutePathString
 import kotlin.io.path.copyTo
 import kotlin.io.path.createDirectories
 import kotlin.io.path.deleteRecursively
 import kotlin.io.path.div
 import kotlin.io.path.exists
+import kotlin.io.path.extension
 import kotlin.io.path.listDirectoryEntries
 import kotlin.io.path.moveTo
 import kotlin.io.path.name
 import kotlin.io.path.notExists
+import kotlin.io.path.readAttributes
 
 @Singleton
 @InjectConstructor
 @OptIn(ExperimentalPathApi::class)
-class AudioFilesNotNormalizedUsingFolderCommand(private val fileRepository: NormalizedFileRepository) : AudioFilesNotNormalizedCommand() {
+class AudioFilesNotNormalizedUsingFolderCommand(private val fileRepository: NormalizedFileRepository) : ExecutionCommand {
+
+    private val log: Logger = LoggerFactory.getLogger(this::class.java)
 
     override val name: String = "Normalize audio files using temporary folder (not normalized only)"
 
-    override fun CommandContext.getMediaFiles(): Collection<Path> {
+    private fun CommandContext.getMediaFiles(): Collection<Path> {
         val allAudioFiles = configuration.ankiMediaFolderPath
             .listDirectoryEntries("*.mp3")
         val normalizedFileNames = fileRepository.getNormalizedFilesIn(configuration.ankiMediaFolderPath, allAudioFiles.mapTo(mutableSetOf()) { it.name })
@@ -130,5 +140,41 @@ class AudioFilesNotNormalizedUsingFolderCommand(private val fileRepository: Norm
 
     private fun buildOriginalFile(configuration: Configuration, renamedFile: RenamedFile): Path =
         configuration.ankiMediaFolderPath / renamedFile.originalName
+
+    private fun Path.isVolumeNormalized(): Boolean {
+        val mp3 = try {
+            Mp3File(toFile())
+        } catch (e: Exception) {
+            log.debug("File '$this' could not be parsed, assume it is not normalized", e)
+            return false
+        }
+
+        val hasReplayGainTag = (mp3.customTag ?: byteArrayOf())
+            .toString(Charsets.UTF_8)
+            .contains(REPLAYGAIN_TRACK_GAIN, ignoreCase = true)
+        return hasReplayGainTag
+    }
+
+    private fun Path.toRenamedFile(): RenamedFile {
+        val attributes = readAttributes<BasicFileAttributes>()
+        return RenamedFile(
+            originalName = name,
+            renamedName = generateNewRandomName(),
+            fileAttributesInfo = FileAttributesInfo(
+                createdAt = attributes.creationTime().toInstant(),
+                lastModifiedAt = attributes.lastModifiedTime().toInstant(),
+            )
+        )
+    }
+
+    private fun Path.generateNewRandomName(): String = absolute().run {
+        generateSequence { parent!! / "${UUID.randomUUID()}.${extension}" }
+            .first { it.notExists() }
+            .name
+    }
+
+    companion object {
+        const val REPLAYGAIN_TRACK_GAIN = "REPLAYGAIN_TRACK_GAIN"
+    }
 
 }
